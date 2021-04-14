@@ -5,7 +5,15 @@ var 칸들 = [];
 바디.append(테이블);
 
 var 비동기콜백 = function(이벤트){
-   console.log("내가 몇칸일까?");
+   console.log(이벤트.target); //칸
+   console.log(이벤트.target.parentNode); //줄
+   console.log(이벤트.target.parentNode.parentNode); // 테이블
+
+   var 몇줄 = 줄들.indexOf(이벤트.target.parentNode)
+    console.log("몇줄",몇줄);
+
+    var 몇칸 = 칸들[몇줄].indexOf(이벤트.target);
+    console.log("몇칸",몇칸);
 };
 
 for(var i = 1; i <= 3; i +=1){
