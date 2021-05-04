@@ -1,8 +1,11 @@
 var tbody = document.querySelector("#table tbody");
 var dataset = [];
-
+var 중단플래그 = false;
 document.querySelector("#exec").addEventListener("click", function () {
     tbody.innerHTML = ''; //tbody 내부 c초기화
+    document.querySelector('#result').textContent = '';
+    dataset = []; // dataset 초기화
+    중단플래그 = false;
     var hor = parseInt(document.querySelector("#hor").value);
     var ver = parseInt(document.querySelector("#ver").value);
     var mine = parseInt(document.querySelector("#mine").value);
@@ -29,7 +32,7 @@ document.querySelector("#exec").addEventListener("click", function () {
         var tr = document.createElement("tr");
         dataset.push(arr);
         for (var j = 0; j < hor; j++) {
-            arr.push(1);
+            arr.push(0);
             var td = document.createElement("td");
             td.addEventListener("contextmenu", function (e) {
                 e.preventDefault(); // 기본으로 정의된 이벤트를 막음, 이경우 우클릭 메뉴창을 막음
@@ -62,9 +65,13 @@ document.querySelector("#exec").addEventListener("click", function () {
                 var 부모tbody = e.currentTarget.parentNode.parentNode;
                 var 칸 = Array.prototype.indexOf.call(부모tr.children, e.currentTarget);
                 var 줄 = Array.prototype.indexOf.call(부모tbody.children, 부모tr);
-                if (dataset[줄][칸] === 'X') {
+                e.currentTarget.classList.add('opened'); // 클릭을했을때 'opened' 라는 클래스를 추가
+
+                if (dataset[줄][칸] === 'X') { // 지뢰클릭
                     e.currentTarget.textContent = "펑";
-                } else {
+                    document.querySelector('#result').textContent = '실패 ㅠㅠ';
+                } else { //지뢰가 아닌 경우 주변 지뢰 갯수
+
                     var 주변 = [
                         dataset[줄][칸 - 1], dataset[줄][칸 + 1]
                     ];
@@ -78,10 +85,51 @@ document.querySelector("#exec").addEventListener("click", function () {
                         주변 = 주변.concat(dataset[줄 + 1][칸 - 1], dataset[줄 + 1][칸], dataset[줄 + 1][칸 + 1]);
                     }
                 }
-                e.currentTarget.textContent = 주변.filter(function (v) {
+                var 주변지뢰갯수 = 주변.filter(function (v) {
                     return v === "X";
-                }).length
+                }).length;
+                e.currentTarget.textContent = 주변지뢰갯수 || ''; // a || b : a가 거짓인 값이면 b를 사용
+                                                                 // 거짓인 값 : false, '', 0, null, undefined, NaN
+                if (주변지뢰갯수 === 0) {
+                    // 주변 8칸 동시 오픈(재귀함수)
+                    var 주변칸 = [];
+                    if (tbody.children[줄 - 1]) {
+                        주변칸 = 주변칸.concat([
+                            tbody.children[줄 - 1].children[칸 - 1],
+                            tbody.children[줄 - 1].children[칸],
+                            tbody.children[줄 - 1].children[칸 + 1],
+                        ]);
 
+                    }
+                    주변칸 = 주변칸.concat([
+                        tbody.children[줄].children[칸 - 1],
+                        tbody.children[줄].children[칸 + 1],
+
+                    ]);
+                    if (tbody.children[줄 + 1]) {
+                        주변칸 = 주변칸.concat([
+                            tbody.children[줄 + 1].children[칸 - 1],
+                            tbody.children[줄 + 1].children[칸],
+                            tbody.children[줄 + 1].children[칸 + 1],
+                        ]);
+
+
+                    }
+
+                    dataset[줄][칸] = 1;
+                    주변칸.filter(function (v) { return !!v }).forEach(function (옆칸) {
+                        // filter((v) => !!v) : 배열의 null, undefined 등을 제거 해주는 문법.
+
+                        var 부모tr = 옆칸.parentNode;
+                        var 부모tbody = 옆칸.parentNode.parentNode;
+                        var 옆칸칸 = Array.prototype.indexOf.call(부모tr.children, 옆칸);
+                        var 옆칸줄 = Array.prototype.indexOf.call(부모tbody.children, 부모tr);
+
+                        if (dataset[옆칸줄][옆칸칸] !== 1)
+                            옆칸.click();
+                    });
+
+                }
             });
 
             tr.appendChild(td);
