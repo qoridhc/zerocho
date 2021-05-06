@@ -1,20 +1,20 @@
 var tbody = document.querySelector("#table tbody");
 var dataset = [];
 var 중단플래그 = false;
+var 열은칸 = 0;
 document.querySelector("#exec").addEventListener("click", function () {
     tbody.innerHTML = ''; //tbody 내부 c초기화
     document.querySelector('#result').textContent = '';
     dataset = []; // dataset 초기화
     중단플래그 = false;
+    var 열은칸 = 0;
     var hor = parseInt(document.querySelector("#hor").value);
     var ver = parseInt(document.querySelector("#ver").value);
     var mine = parseInt(document.querySelector("#mine").value);
-    console.log(hor, ver, mine);
 
     // 지뢰 위치 뽑기
 
     var 후보군 = Array(hor * ver).fill().map(function (요소, 인덱스) {
-        console.log(요소, 인덱스);
         return 인덱스;
     });
 
@@ -36,6 +36,9 @@ document.querySelector("#exec").addEventListener("click", function () {
             var td = document.createElement("td");
             td.addEventListener("contextmenu", function (e) {
                 e.preventDefault(); // 기본으로 정의된 이벤트를 막음, 이경우 우클릭 메뉴창을 막음
+                if(중단플래그){
+                    return; //함수가 끝남
+                }
                 var 부모tr = e.currentTarget.parentNode;
                 var 부모tbody = e.currentTarget.parentNode.parentNode;
                 var 칸 = Array.prototype.indexOf.call(부모tr.children, e.currentTarget); //배열이 아닌곳에 강제로 indexof를 적용하는방법
@@ -61,15 +64,25 @@ document.querySelector("#exec").addEventListener("click", function () {
             });
 
             td.addEventListener("click", function (e) { //클릭했을때 주변 지뢰 갯수
+               if(중단플래그){
+                   return; //함수가 끝남
+               }
                 var 부모tr = e.currentTarget.parentNode;
                 var 부모tbody = e.currentTarget.parentNode.parentNode;
                 var 칸 = Array.prototype.indexOf.call(부모tr.children, e.currentTarget);
                 var 줄 = Array.prototype.indexOf.call(부모tbody.children, 부모tr);
+           
+                if(dataset[줄][칸] === 1){
+                    return; //함수가 끝남
+                }
+                      
                 e.currentTarget.classList.add('opened'); // 클릭을했을때 'opened' 라는 클래스를 추가
-
+                열은칸 += 1;
+                console.log(열은칸, hor*ver-mine);
                 if (dataset[줄][칸] === 'X') { // 지뢰클릭
                     e.currentTarget.textContent = "펑";
                     document.querySelector('#result').textContent = '실패 ㅠㅠ';
+                    중단플래그 = true;
                 } else { //지뢰가 아닌 경우 주변 지뢰 갯수
 
                     var 주변 = [
@@ -89,7 +102,8 @@ document.querySelector("#exec").addEventListener("click", function () {
                     return v === "X";
                 }).length;
                 e.currentTarget.textContent = 주변지뢰갯수 || ''; // a || b : a가 거짓인 값이면 b를 사용
-                                                                 // 거짓인 값 : false, '', 0, null, undefined, NaN
+                // 거짓인 값 : false, '', 0, null, undefined, NaN
+                dataset[줄][칸] = 1;
                 if (주변지뢰갯수 === 0) {
                     // 주변 8칸 동시 오픈(재귀함수)
                     var 주변칸 = [];
@@ -129,6 +143,11 @@ document.querySelector("#exec").addEventListener("click", function () {
                             옆칸.click();
                     });
 
+                }
+            
+                if(열은칸 === hor * ver - mine){
+                    중단플래그 = true;
+                    document.querySelector("#result").textContent = "승리 ^^";
                 }
             });
 
